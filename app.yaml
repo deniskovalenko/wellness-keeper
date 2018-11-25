@@ -1,5 +1,5 @@
 runtime: python37
 
 env_variables:
-  46_ELKS_USERNAME: YOUR-USERNAME
-  46_ELKS_PASSWORD: YOUR-PASSWORD
+  API_46_ELKS_USERNAME: username
+  API_46_ELKS_PASSWORD: password

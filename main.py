@@ -16,7 +16,7 @@ events_table_ref = bigquery_client.dataset(dataset_id).table(events_table_id)
 events_table = bigquery_client.get_table(events_table_ref)
 client = texttospeech.TextToSpeechClient()
 
-basicAuth = HTTPBasicAuth(os.environ.get('46_ELKS_USERNAME'), os.environ.get('46_ELKS_PASSWORD'))
+basicAuth = HTTPBasicAuth(os.environ.get('API_46_ELKS_USERNAME'), os.environ.get('API_46_ELKS_PASSWORD'))
 
 
 @app.route('/bpm', methods=['POST'])
