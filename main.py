@@ -1,8 +1,13 @@
-from flask import Flask, request, jsonify
-from google.cloud import bigquery
-from google.cloud import texttospeech
 import requests
 import os
+from flask import Flask, request, jsonify, current_app
+from google.cloud import bigquery
+from google.cloud import texttospeech
+from google.cloud import storage
+import datetime
+from werkzeug import secure_filename
+import six
+from werkzeug.exceptions import BadRequest
 from requests.auth import HTTPBasicAuth
 
 app = Flask(__name__)
@@ -37,7 +42,6 @@ def collect_hear_rate():
     return jsonify({"result": "ok", "errors": errors})
 
 
-
 @app.route('/userEvent', methods=['POST'])
 def collect_user_event():
     content = request.get_json(force=True)
@@ -65,8 +69,8 @@ def emergency_call():
     if (send_sms==1):
         print('sending sms to ' + to_phone_number)
         requestBody = {"from": from_phone_number, "to": to_phone_number, "message": message}
-        requests.post("https://api.46elks.com/a1/sms", json=requestBody, auth=basicAuth)
-        # todo send sms as well
+        result = requests.post("https://api.46elks.com/a1/sms", json=requestBody, auth=basicAuth)
+        print(result.content)
     print(f'calling with message {message}')
 
     mp3_uri = synthesize_voice(message)
@@ -95,11 +99,41 @@ def synthesize_voice(message):
     # Perform the text-to-speech request on the text input with the selected
     # voice parameters and audio file type
     response = client.synthesize_speech(synthesis_input, voice, audio_config)
-    result = requests.post('https://file.io', files=dict(file=("call.mp3", response.audio_content)))
+    # result = requests.post('https://file.io', files=dict(file=("call.mp3", response.audio_content)))
 
-    return result.json()["link"]
+    return upload_file(response.audio_content, "emergency_call.mp3", "audio/mp3")
+    # return result.json()["link"]
+
+def _get_storage_client():
+    return storage.Client()
+
+
+def _safe_filename(filename):
+    filename = secure_filename(filename)
+    date = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H%M%S")
+    basename, extension = filename.rsplit('.', 1)
+    return "{0}-{1}.{2}".format(basename, date, extension)
+
+
+def upload_file(file_stream, filename, content_type):
+    filename = _safe_filename(filename)
+
+    client = _get_storage_client()
+    bucket = client.bucket('stately-turbine-223513.appspot.com')
+    blob = bucket.blob(filename)
+
+    blob.upload_from_string(
+        file_stream,
+        content_type=content_type)
+
+    url = blob.public_url
+
+    if isinstance(url, six.binary_type):
+        url = url.decode('utf-8')
+
+    return url
+
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-# [END gae_python37_bigquery]

@@ -2,3 +2,5 @@ google-cloud-bigquery==1.7.0
 google-cloud-texttospeech
 Flask==1.0.2
 grpcio
+google-cloud-storage==1.7.0
+Werkzeug
